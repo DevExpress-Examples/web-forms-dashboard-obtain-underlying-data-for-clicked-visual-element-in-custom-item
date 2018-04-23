@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Dashboard>
+  <Title Text="New Dashboard" />
+  <DataSources>
+    <SqlDataSource ComponentName="DataSource1">
+      <Name>Invoices</Name>
+      <Connection Name="northwind" FromAppConfig="true" />
+      <Query Type="SelectQuery" Name="Invoices">
+        <Tables>
+          <Table Name="Invoices" />
+        </Tables>
+        <Columns>
+          <Column Table="Invoices" Name="CustomerID" />
+          <Column Table="Invoices" Name="CustomerName" />
+          <Column Table="Invoices" Name="City" />
+          <Column Table="Invoices" Name="Region" />
+          <Column Table="Invoices" Name="Country" />
+          <Column Table="Invoices" Name="Salesperson" />
+          <Column Table="Invoices" Name="OrderID" />
+          <Column Table="Invoices" Name="OrderDate" />
+          <Column Table="Invoices" Name="ProductName" />
+          <Column Table="Invoices" Name="UnitPrice" />
+          <Column Table="Invoices" Name="Quantity" />
+          <Column Table="Invoices" Name="ExtendedPrice" />
+        </Columns>
+      </Query>
+      <ConnectionOptions CloseConnection="true" />
+    </SqlDataSource>
+  </DataSources>
+  <Items>
+    <CustomItem ComponentName="customItemDashboardItem2" Name="Funnel D3 1" DataSource="DataSource1" DataMember="Invoices" CustomItemType="FunnelD3">
+      <DataItems>
+        <Measure DataMember="ExtendedPrice" DefaultId="DataItem0" />
+        <Dimension DataMember="Salesperson" ColoringMode="Hue" DefaultId="DataItem1" />
+      </DataItems>
+      <SliceTables>
+        <SliceTable Name="SliceTable1">
+          <Dimensions>
+            <Dimension DefaultId="DataItem1" />
+          </Dimensions>
+          <Measures>
+            <Measure DefaultId="DataItem0" />
+          </Measures>
+        </SliceTable>
+      </SliceTables>
+      <InteractivityTargets>
+        <Dimension DefaultId="DataItem1" />
+      </InteractivityTargets>
+      <ColoringDimensions>
+        <Dimension DefaultId="DataItem1" />
+      </ColoringDimensions>
+      <ColoringMeasures>
+        <Measure DefaultId="DataItem0" />
+      </ColoringMeasures>
+      <CustomMetadata IsCurved="true" PinchCount="2">
+        <Values>
+          <Item1 ItemType="Measure" DefaultId="DataItem0" />
+        </Values>
+        <Arguments>
+          <Item1 ItemType="Dimension" DefaultId="DataItem1" />
+        </Arguments>
+      </CustomMetadata>
+    </CustomItem>
+  </Items>
+  <LayoutTree>
+    <LayoutGroup Weight="100">
+      <LayoutItem DashboardItem="customItemDashboardItem2" Weight="100" />
+    </LayoutGroup>
+  </LayoutTree>
+</Dashboard>
