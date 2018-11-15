@@ -1,3 +1,10 @@
+<!-- default file list -->
+*Files to look at*:
+
+* **[Default.aspx](./CS/Default.aspx) (VB: [Default.aspx.vb](./VB/Default.aspx.vb))**
+* [Default.aspx.cs](./CS/Default.aspx.cs) (VB: [Default.aspx.vb](./VB/Default.aspx.vb))
+* [funnel.js](./CS/Scripts/Funnel/funnel.js) (VB: [funnel.js](./VB/Scripts/Funnel/funnel.js))
+<!-- default file list end -->
 # Web Dashboard - How to Obtain Underlying Data for a Clicked Visual Element in Custom Item
 
 
