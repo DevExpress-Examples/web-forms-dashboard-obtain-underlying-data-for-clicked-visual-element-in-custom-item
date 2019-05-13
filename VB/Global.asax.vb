@@ -1,13 +1,4 @@
-﻿Imports DevExpress.DashboardCommon
-Imports DevExpress.DashboardWeb
-Imports DevExpress.DataAccess.ConnectionParameters
-Imports DevExpress.DataAccess.Sql
-Imports System
-Imports System.Collections.Generic
-Imports System.Linq
-Imports System.Web
-Imports System.Web.Security
-Imports System.Web.SessionState
+﻿Imports DevExpress.DashboardWeb
 
 Namespace WebApplication18
     Public Class [Global]
@@ -15,7 +6,7 @@ Namespace WebApplication18
 
         Protected Sub Application_Start(ByVal sender As Object, ByVal e As EventArgs)
             Dim newDashboardStorage As New DashboardFileStorage("~/App_Data/Dashboards")
-            DashboardService.SetDashboardStorage(newDashboardStorage)
+            DashboardConfigurator.Default.SetDashboardStorage(newDashboardStorage)
         End Sub
     End Class
 End Namespace
