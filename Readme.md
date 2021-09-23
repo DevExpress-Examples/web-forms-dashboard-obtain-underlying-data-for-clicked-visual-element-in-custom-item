@@ -4,7 +4,7 @@
 [![](https://img.shields.io/badge/📖_How_to_use_DevExpress_Examples-e9f6fc?style=flat-square)](https://docs.devexpress.com/GeneralInformation/403183)
 <!-- default badges end -->
 
-# Dashboard for Web Forms - How to Obtain Underlying Data for a Clicked Visual Element in Custom Item
+# Dashboard for Web Forms - How to Obtain Underlying Data for a Clicked Visual Element in a Custom Item
 
 This example shows how to obtain underlying data in a custom dashboard item when a user clicks the item's visual element. The custom item is based on [dashboard-extension-funnel-d3-item](https://github.com/DevExpress/dashboard-extensions/blob/master/docs/funnel-d3-item.md). The following code is used to display underlying data in the [dxPopup](https://js.devexpress.com/Documentation/ApiReference/UI_Components/dxPopup/) DevExtreme UI component:
 
