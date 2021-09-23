@@ -3,61 +3,63 @@
 [![](https://img.shields.io/badge/Open_in_DevExpress_Support_Center-FF7200?style=flat-square&logo=DevExpress&logoColor=white)](https://supportcenter.devexpress.com/ticket/details/T542288)
 [![](https://img.shields.io/badge/📖_How_to_use_DevExpress_Examples-e9f6fc?style=flat-square)](https://docs.devexpress.com/GeneralInformation/403183)
 <!-- default badges end -->
+
+# Dashboard for Web Forms - How to Obtain Underlying Data for a Clicked Visual Element in Custom Item
+
+This example shows how to obtain underlying data in a custom dashboard item when a user clicks the item's visual element. The custom item is based on [dashboard-extension-funnel-d3-item](https://github.com/DevExpress/dashboard-extensions/blob/master/docs/funnel-d3-item.md). The following code is used to display underlying data in the [dxPopup](https://js.devexpress.com/Documentation/ApiReference/UI_Components/dxPopup/) DevExtreme UI component:
+
+```js
+FunnelD3ItemViewer.prototype._showUnderlyingData = function (arguments) {
+	if(!this.viewerApiExtension)
+		return;
+
+	var clientData = this.viewerApiExtension.getItemData(this.getName());
+	var columns = clientData.getDataMembers();
+	var requestParameters = {
+		dataMembers: columns,
+		uniqueValuesByAxisName: { "Default": arguments }
+	};
+
+	this.viewerApiExtension.requestUnderlyingData(this.getName(), requestParameters, function (data) {
+		var underlyingData = [];
+		dataMembers = data.getDataMembers();
+		for (var i = 0; i < data.getRowCount() ; i++) {
+			var dataTableRow = {};
+			dataMembers.forEach(function(dataMember) {
+				dataTableRow[dataMember] = data.getRowValue(i, dataMember);
+			});
+			underlyingData.push(dataTableRow);
+		}
+
+		new dxPopup(document.getElementById('myPopup'), {
+			height: 800,
+			showTitle: true,
+			title: "Underlying Data",
+			visible: true,
+			contentTemplate: function () {
+				var div = document.createElement('div');
+				new dxDataGrid(div, {
+					height: 800,
+					scrolling: {
+						mode: 'virtual'
+					},
+					dataSource: underlyingData
+				});
+				return div;
+			}
+		});
+	});
+}
+```
+
+
 <!-- default file list -->
-*Files to look at*:
+## Files to Look At
 
 * [Default.aspx](./CS/Default.aspx) (VB: [Default.aspx](./VB/Default.aspx))
 * [Default.aspx.cs](./CS/Default.aspx.cs) (VB: [Default.aspx.vb](./VB/Default.aspx.vb))
 * [funnel.js](./CS/Scripts/Funnel/funnel.js) (VB: [funnel.js](./VB/Scripts/Funnel/funnel.js))
 <!-- default file list end -->
-
-# Dashboard for Web Forms - How to Obtain Underlying Data for a Clicked Visual Element in Custom Item
-
-This example demonstrates how to obtain underlying data in a custom dashboard item when clicking its visual element. The custom item is based on [dashboard-extension-funnel-d3-item](https://github.com/DevExpress/dashboard-extensions/blob/master/docs/funnel-d3-item.md). To display underlying data, the following code is used:
-
-```js
-    FunnelD3ItemViewer.prototype._showUnderlyingData = function (arguments) {
-        if(!this.viewerApiExtension)
-            return;
-
-        var clientData = this.viewerApiExtension.getItemData(this.getName());
-        var columns = clientData.getDataMembers();
-        var requestParameters = {
-            dataMembers: columns,
-            uniqueValuesByAxisName: { "Default": arguments }
-        };
-
-        this.viewerApiExtension.requestUnderlyingData(this.getName(), requestParameters, function (data) {
-            var underlyingData = [];
-            dataMembers = data.getDataMembers();
-            for (var i = 0; i < data.getRowCount() ; i++) {
-                var dataTableRow = {};
-                dataMembers.forEach(function(dataMember) {
-                    dataTableRow[dataMember] = data.getRowValue(i, dataMember);
-                });
-                underlyingData.push(dataTableRow);
-            }
-
-            new dxPopup(document.getElementById('myPopup'), {
-                height: 800,
-                showTitle: true,
-                title: "Underlying Data",
-                visible: true,
-                contentTemplate: function () {
-                    var div = document.createElement('div');
-                    new dxDataGrid(div, {
-                        height: 800,
-                        scrolling: {
-                            mode: 'virtual'
-                        },
-                        dataSource: underlyingData
-                    });
-                    return div;
-                }
-            });
-        });
-    }
-```
 
 ## Documentation
 
