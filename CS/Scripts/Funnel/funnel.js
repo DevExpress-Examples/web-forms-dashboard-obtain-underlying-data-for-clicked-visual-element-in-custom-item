@@ -1,4 +1,4 @@
-var FunnelD3ItemExtension = (function() {
+window.FunnelD3ItemExtension = (function() {
 
     var Dashboard = DevExpress.Dashboard;
     var Designer = DevExpress.Dashboard.Designer;
@@ -101,254 +101,255 @@ var FunnelD3ItemExtension = (function() {
     // Third party libraries: 
     // "d3js" component from https://d3js.org/ [Copyright(c) 2017 Mike Bostock]
     // "d3-funnel" component from https://jakezatecky.github.io/d3-funnel/ [Copyright(c) 2017 Jake Zatecky]
-    function FunnelD3ItemViewer(dashboardControl, model, $container, options) {
-        Dashboard.CustomItemViewer.call(this, model, $container, options)
+    class FunnelD3ItemViewer extends Dashboard.CustomItemViewer {
+        constructor(dashboardControl, model, $container, options) {
+            super(model, $container, options)
 
-        this.viewerApiExtension = dashboardControl.findExtension('viewer-api');
-        this.funnelSettings = undefined;
-        this.funnelViewer = null;
-        this.selectionValues = [];
-        this.exportingImage = new Image();
-        this._subscribeProperties();
-    }
-    FunnelD3ItemViewer.prototype = Object.create(Dashboard.CustomItemViewer.prototype);
-    FunnelD3ItemViewer.prototype.constructor = FunnelD3ItemViewer;
+            this.viewerApiExtension = dashboardControl.findExtension('viewer-api');
+            this.funnelSettings = undefined;
+            this.funnelViewer = null;
+            this.selectionValues = [];
+            this.exportingImage = new Image();
+            this._subscribeProperties();
+        }
+        renderContent($element, changeExisting) {
+            var element = $element.jquery ? $element[0] : $element;
+                
+            var data = this._getDataSource();
+            var funnelId = this._getFunnelId();
+            if (!this._ensureFunnelLibrary(element))
+                return;
+            if (!!data) {
+                if (!changeExisting || !this.funnelViewer) {
+                    while(element.firstChild)
+                        element.removeChild(element.firstChild);
+                        
+                    var div = document.createElement('div');
+                    div.id = funnelId;
+                    element.appendChild(div);
+                        
+                    this.funnelViewer = new D3Funnel('#' + funnelId);
+                }
+                this._update(data);
+            } else {
+                while(element.firstChild)
+                    element.removeChild(element.firstChild);
 
-    FunnelD3ItemViewer.prototype.renderContent = function ($element, changeExisting) {
-        var element = $element.jquery ? $element[0] : $element;
-            
-        var data = this._getDataSource();
-        var funnelId = this._getFunnelId();
-        if (!this._ensureFunnelLibrary(element))
-            return;
-        if (!!data) {
-            if (!changeExisting || !this.funnelViewer) {
+                this.funnelViewer = null;
+            }
+        }
+        setSize(width, height) {
+            super.setSize(width, height);
+            this._update(null, { chart: { width: this.contentWidth(), height: this.contentHeight() } });
+        }
+        clearSelection() {
+            super.clearSelection.call();
+            this._update(this._getDataSource());
+        }
+        allowExportSingleItem() {
+            return true;
+        }
+        getExportInfo() {
+            return {
+                image: this._getImageBase64()
+            };
+        }
+        _getDataSource() {
+            var _this = this;
+            var bindingValues = this.getBindingValue('Values');
+            if (bindingValues.length == 0)
+                return undefined;
+            var data = [];
+            this.iterateData(function (dataRow) {
+                var values = dataRow.getValue('Values');
+                var valueStr = dataRow.getDisplayText('Values');
+                var color = dataRow.getColor('Values');
+                if (_this._hasArguments()) {
+                    var labelText = dataRow.getDisplayText('Arguments').join(' - ') + ': ' + valueStr;
+                    var argumentsList = dataRow.getDisplayText('Arguments');
+                    data.push([{ data: dataRow, argumentsList : argumentsList, text: labelText, color: color[0] }].concat(values));//0 - 'layer' index for color value
+                } else {
+                    data = values.map(function (value, index) { return [{ text: bindingValues[index].displayName() + ': ' + valueStr[index], color: color[index] }, value]; });
+                }
+            });
+            return data.length > 0 ? data : undefined;
+        }
+        _ensureFunnelLibrary(element) {
+            if (!window['D3Funnel']) {
                 while(element.firstChild)
                     element.removeChild(element.firstChild);
                     
                 var div = document.createElement('div');
-                div.id = funnelId;
-                element.appendChild(div);
+                div.style.position = 'absolute';
+                div.style.top = '50%';
+                div.style.transform = 'translateY(-50%)';
+                div.style.color = '#CF0F2E';
+                div.style.textAlign = 'center';
+                div.width = '95%';
+                div.innerText = "'D3Funnel' cannot be displayed. You should include 'd3.v3.min.js' and 'd3-funnel.js' libraries.";
                     
-                this.funnelViewer = new D3Funnel('#' + funnelId);
+                element.appendChild(div);
+                return false;
             }
-            this._update(data);
-        } else {
-            while(element.firstChild)
-                element.removeChild(element.firstChild);
-
-            this.funnelViewer = null;
+            return true;
         }
-    };
-    FunnelD3ItemViewer.prototype.setSize = function (width, height) {
-        Object.getPrototypeOf(FunnelD3ItemViewer.prototype).setSize.call(this, width, height);
-        this._update(null, { chart: { width: this.contentWidth(), height: this.contentHeight() } });
-    };
-    FunnelD3ItemViewer.prototype.clearSelection = function () {
-        Object.getPrototypeOf(FunnelD3ItemViewer.prototype).clearSelection.call(this);
-        this._update(this._getDataSource());
-    };
-    FunnelD3ItemViewer.prototype.allowExportSingleItem = function () {
-        return true;
-    };
-    FunnelD3ItemViewer.prototype.getExportInfo = function () {
-        return {
-            image: this._getImageBase64()
-        };
-    };
-    FunnelD3ItemViewer.prototype._getDataSource = function () {
-        var _this = this;
-        var bindingValues = this.getBindingValue('Values');
-        if (bindingValues.length == 0)
-            return undefined;
-        var data = [];
-        this.iterateData(function (dataRow) {
-            var values = dataRow.getValue('Values');
-            var valueStr = dataRow.getDisplayText('Values');
-            var color = dataRow.getColor('Values');
-            if (_this._hasArguments()) {
-                var labelText = dataRow.getDisplayText('Arguments').join(' - ') + ': ' + valueStr;
-                var arguments = dataRow.getDisplayText('Arguments');
-                data.push([{ data: dataRow, arguments : arguments, text: labelText, color: color[0] }].concat(values));//0 - 'layer' index for color value
-            } else {
-                data = values.map(function (value, index) { return [{ text: bindingValues[index].displayName() + ': ' + valueStr[index], color: color[index] }, value]; });
-            }
-        });
-        return data.length > 0 ? data : undefined;
-    };
-    FunnelD3ItemViewer.prototype._ensureFunnelLibrary = function (element) {
-        if (!window['D3Funnel']) {
-            while(element.firstChild)
-                element.removeChild(element.firstChild);
-                
-            var div = document.createElement('div');
-            div.style.position = 'absolute';
-            div.style.top = '50%';
-            div.style.transform = 'translateY(-50%)';
-            div.style.color = '#CF0F2E';
-            div.style.textAlign = 'center';
-            div.width = '95%';
-            div.innerText = "'D3Funnel' cannot be displayed. You should include 'd3.v3.min.js' and 'd3-funnel.js' libraries.";
-                
-            element.appendChild(div);
-            return false;
-        }
-        return true;
-    };
-    FunnelD3ItemViewer.prototype._ensureFunnelSettings = function () {
-        var _this = this;
-        var getSelectionColor = function (hexColor) { return _this.funnelViewer.colorizer.shade(hexColor, -0.5); };
-        if (!this.funnelSettings) {
-            this.funnelSettings = {
-                data: undefined,
-                options: {
-                    chart: {
-                        width: this.contentWidth(),
-                        height: this.contentHeight(),
-                        bottomPinch: this.getPropertyValue('PinchCount'),
-                        curve: { enabled: this.getPropertyValue('IsCurved') }
-                    },
-                    block: {
-                        dynamicHeight: this.getPropertyValue('IsDynamicHeight'),
-                        fill: {
-                            scale: function (index) {
-                                var obj = _this.funnelSettings.data[index][0];
-                                return obj.data && _this.isSelected(obj.data) ? getSelectionColor(obj.color) : obj.color;
-                            },
-                            type: this.getPropertyValue('FillType').toLowerCase()
-                        }
-                    },
-                    label: {
-                        format: function (label, value) {
-                            return label.text;
-                        }
-                    },
-                    events: {
-                        click: { block: function (e) { return _this._onClick(e); } }
-                    }
-                }
-            };
-        }
-        this.funnelSettings.options.block.highlight = this.canDrillDown() || this.canMasterFilter();
-        return this.funnelSettings;
-    };
-    FunnelD3ItemViewer.prototype._getFunnelId = function () {
-        return 'dx-d3-funnel-' + this.getName();
-    };
-    FunnelD3ItemViewer.prototype._onClick = function (e) {
-        if (!this._hasArguments() || !e.label)
-            return;
-        var row = e.label.raw.data;
-        if (this.canDrillDown(row))
-            this.drillDown(row);
-        else if (this.canMasterFilter(row)) {
-            this.setMasterFilter(row);
-            this._update();
-        }
-        //Show underlying data
-        var arguments = e.label.raw.arguments;
-        this._showUnderlyingData(arguments);
-    };
-    FunnelD3ItemViewer.prototype._showUnderlyingData = function (arguments) {
-        if(!this.viewerApiExtension)
-            return;
-
-        var clientData = this.viewerApiExtension.getItemData(this.getName());
-        var columns = clientData.getDataMembers();
-        var requestParameters = {
-            dataMembers: columns,
-            uniqueValuesByAxisName: { "Default": arguments }
-        };
-
-        this.viewerApiExtension.requestUnderlyingData(this.getName(), requestParameters, function (data) {
-            var underlyingData = [];
-            dataMembers = data.getDataMembers();
-            for (var i = 0; i < data.getRowCount() ; i++) {
-                var dataTableRow = {};
-                dataMembers.forEach(function(dataMember) {
-                    dataTableRow[dataMember] = data.getRowValue(i, dataMember);
-                });
-                underlyingData.push(dataTableRow);
-            }
-
-            new dxPopup(document.getElementById('myPopup'), {
-                height: 800,
-                showTitle: true,
-                title: "Underlying Data",
-                visible: true,
-                contentTemplate: function () {
-                    var div = document.createElement('div');
-                    new dxDataGrid(div, {
-                        height: 800,
-                        scrolling: {
-                            mode: 'virtual'
+        _ensureFunnelSettings() {
+            var _this = this;
+            var getSelectionColor = hexColor => _this.funnelViewer.colorizer.shade(hexColor, -0.5);
+            if (!this.funnelSettings) {
+                this.funnelSettings = {
+                    data: undefined,
+                    options: {
+                        chart: {
+                            width: this.contentWidth(),
+                            height: this.contentHeight(),
+                            bottomPinch: this.getPropertyValue('PinchCount'),
+                            curve: { enabled: this.getPropertyValue('IsCurved') }
                         },
-                        dataSource: underlyingData
+                        block: {
+                            dynamicHeight: this.getPropertyValue('IsDynamicHeight'),
+                            fill: {
+                                scale: function (index) {
+                                    var obj = _this.funnelSettings.data[index][0];
+                                    return obj.data && _this.isSelected(obj.data) ? getSelectionColor(obj.color) : obj.color;
+                                },
+                                type: this.getPropertyValue('FillType').toLowerCase()
+                            }
+                        },
+                        label: {
+                            format: function (label, value) {
+                                return label.text;
+                            }
+                        },
+                        events: {
+                            click: { block: function (e) { return _this._onClick(e); } }
+                        }
+                    }
+                };
+            }
+            this.funnelSettings.options.block.highlight = this.canDrillDown() || this.canMasterFilter();
+            return this.funnelSettings;
+        }
+        _getFunnelId() {
+            return 'dx-d3-funnel-' + this.getName();
+        }
+        _onClick(e) {
+            if (!this._hasArguments() || !e.label)
+                return;
+            var row = e.label.raw.data;
+            if (this.canDrillDown(row))
+                this.drillDown(row);
+            else if (this.canMasterFilter(row)) {
+                this.setMasterFilter(row);
+                this._update();
+            }
+            //Show underlying data
+            var argumentsList = e.label.raw.arguments;
+            this._showUnderlyingData(argumentsList);
+        }
+        _showUnderlyingData(argumentsList) {
+            if(!this.viewerApiExtension)
+                return;
+
+            var clientData = this.viewerApiExtension.getItemData(this.getName());
+            var columns = clientData.getDataMembers();
+            var requestParameters = {
+                dataMembers: columns,
+                uniqueValuesByAxisName: { "Default": argumentsList }
+            };
+
+            this.viewerApiExtension.requestUnderlyingData(this.getName(), requestParameters, function (data) {
+                var underlyingData = [];
+                dataMembers = data.getDataMembers();
+                for (var i = 0; i < data.getRowCount() ; i++) {
+                    var dataTableRow = {};
+                    dataMembers.forEach(function(dataMember) {
+                        dataTableRow[dataMember] = data.getRowValue(i, dataMember);
                     });
-                    return div;
+                    underlyingData.push(dataTableRow);
                 }
+
+                new dxPopup(document.getElementById('myPopup'), {
+                    height: 800,
+                    showTitle: true,
+                    title: "Underlying Data",
+                    visible: true,
+                    contentTemplate: function () {
+                        var div = document.createElement('div');
+                        new dxDataGrid(div, {
+                            height: 800,
+                            scrolling: {
+                                mode: 'virtual'
+                            },
+                            dataSource: underlyingData
+                        });
+                        return div;
+                    }
+                });
             });
-        });
-    }
-
-    FunnelD3ItemViewer.prototype._subscribeProperties = function () {
-        var _this = this;
-        this.subscribe('IsCurved', function (isCurved) { return _this._update(null, { chart: { curve: { enabled: isCurved } } }); });
-        this.subscribe('IsDynamicHeight', function (isDynamicHeight) { return _this._update(null, { block: { dynamicHeight: isDynamicHeight } }); });
-        this.subscribe('PinchCount', function (count) { return _this._update(null, { chart: { bottomPinch: count } }); });
-        this.subscribe('FillType', function (type) { return _this._update(null, { block: { fill: { type: type.toLowerCase() } } }); });
-    };
-
-    FunnelD3ItemViewer.prototype._update = function (data, options) {
-        this._ensureFunnelSettings();
-        if (!!data) {
-            this.funnelSettings.data = data;
         }
-        if (!!options) {
-            this._mergeOptions(this.funnelSettings.options, options);
-        }
-        if (!!this.funnelViewer) {
-            this.funnelViewer.draw(this.funnelSettings.data, this.funnelSettings.options);
-            this._updateExportingImage();
-        }
-    };
-    FunnelD3ItemViewer.prototype._mergeOptions = function(options, newOptions) {
-        var _this = this;
-        Object.keys(newOptions).forEach(function(key) {
-            if(typeof newOptions[key] === 'object')
-                _this._mergeOptions(options[key], newOptions[key]);
-            else 
-                options[key] = newOptions[key];
-        });
-    }
-    FunnelD3ItemViewer.prototype._updateExportingImage = function () {
-        var svg = document.getElementById(this._getFunnelId()).firstChild,
-        str = new XMLSerializer().serializeToString(svg),
-        encodedData = 'data:image/svg+xml;base64,' + window.btoa(str);
-        this.exportingImage.src = encodedData;
-    };
-    FunnelD3ItemViewer.prototype._hasArguments = function () {
-        return this.getBindingValue('Arguments').length > 0;
-    };
-    FunnelD3ItemViewer.prototype._getImageBase64 = function () {
-        var canvas = document.createElement('canvas');
-        canvas['width'] = this.contentWidth();
-        canvas['height'] = this.contentHeight();
-        canvas['getContext']('2d').drawImage(this.exportingImage, 0, 0);
-        return canvas['toDataURL']().replace('data:image/png;base64,', '');
-    };
 
-    var FunnelD3ItemExtension = function (dashboardControl) {
-        dashboardControl.registerIcon(svgIcon);
+        _subscribeProperties() {
+            var _this = this;
+            this.subscribe('IsCurved', function (isCurved) { return _this._update(null, { chart: { curve: { enabled: isCurved } } }); });
+            this.subscribe('IsDynamicHeight', function (isDynamicHeight) { return _this._update(null, { block: { dynamicHeight: isDynamicHeight } }); });
+            this.subscribe('PinchCount', function (count) { return _this._update(null, { chart: { bottomPinch: count } }); });
+            this.subscribe('FillType', function (type) { return _this._update(null, { block: { fill: { type: type.toLowerCase() } } }); });
+        }
 
-        this.name = 'FunnelD3';
-        this.metaData = funnelMeta;
-        this.createViewerItem = function (model, $element, content) {
-            return new FunnelD3ItemViewer(dashboardControl, model, $element, content);
+        _update(data, options) {
+            this._ensureFunnelSettings();
+            if (!!data) {
+                this.funnelSettings.data = data;
+            }
+            if (!!options) {
+                this._mergeOptions(this.funnelSettings.options, options);
+            }
+            if (!!this.funnelViewer) {
+                this.funnelViewer.draw(this.funnelSettings.data, this.funnelSettings.options);
+                this._updateExportingImage();
+            }
+        }
+        _mergeOptions = function(options, newOptions) {
+            var _this = this;
+            Object.keys(newOptions).forEach(function(key) {
+                if(typeof newOptions[key] === 'object')
+                    _this._mergeOptions(options[key], newOptions[key]);
+                else 
+                    options[key] = newOptions[key];
+            });
+        }
+        _updateExportingImage() {
+            var svg = document.getElementById(this._getFunnelId()).firstChild,
+            str = new XMLSerializer().serializeToString(svg),
+            encodedData = 'data:image/svg+xml;base64,' + window.btoa(str);
+            this.exportingImage.src = encodedData;
+        }
+        _hasArguments() {
+            return this.getBindingValue('Arguments').length > 0;
+        }
+        _getImageBase64() {
+            var canvas = document.createElement('canvas');
+            canvas['width'] = this.contentWidth();
+            canvas['height'] = this.contentHeight();
+            canvas['getContext']('2d').drawImage(this.exportingImage, 0, 0);
+            return canvas['toDataURL']().replace('data:image/png;base64,', '');
         }
     }
+    class FunnelD3ItemExtension {
+        constructor(dashboardControl) {
+            dashboardControl.registerIcon(svgIcon);
 
-        return FunnelD3ItemExtension;
+            this.name = 'FunnelD3';
+            this.metaData = funnelMeta;
+            this.dashboardControl = dashboardControl;
+        }
+        createViewerItem = (model, $element, content) => {
+            return new FunnelD3ItemViewer(this.dashboardControl, model, $element, content);
+        }
+    }
+
+    return FunnelD3ItemExtension;
 })();
 
 
