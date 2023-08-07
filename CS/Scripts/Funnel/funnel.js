@@ -105,7 +105,7 @@ window.FunnelD3ItemExtension = (function() {
         constructor(dashboardControl, model, $container, options) {
             super(model, $container, options)
 
-            this.viewerApiExtension = dashboardControl.findExtension('viewer-api');
+            this.viewerApiExtension = dashboardControl.findExtension('viewerApi');
             this.funnelSettings = undefined;
             this.funnelViewer = null;
             this.selectionValues = [];
