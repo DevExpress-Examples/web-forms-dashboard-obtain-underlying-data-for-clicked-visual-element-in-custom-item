@@ -53,13 +53,11 @@ FunnelD3ItemViewer.prototype._showUnderlyingData = function (arguments) {
 ```
 
 
-<!-- default file list -->
-## Files to Look At
+## Files to Review
 
 * [Default.aspx](./CS/Default.aspx) (VB: [Default.aspx](./VB/Default.aspx))
 * [Default.aspx.cs](./CS/Default.aspx.cs) (VB: [Default.aspx.vb](./VB/Default.aspx.vb))
 * [funnel.js](./CS/Scripts/Funnel/funnel.js) (VB: [funnel.js](./VB/Scripts/Funnel/funnel.js))
-<!-- default file list end -->
 
 ## Documentation
 
